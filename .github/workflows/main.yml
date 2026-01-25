@@ -1,5 +1,9 @@
 name: Elite Playwright Tests CI
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
 on:
   schedule:
     # 06:00 UTC is 07:00 Belgium time (Winter)
