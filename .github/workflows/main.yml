@@ -45,7 +45,11 @@ jobs:
       - name: Run Tests
         continue-on-error: true
         env:
-          # Mevcut env ayarların kalsın...
+          TEST_ENV: ${{ github.event.inputs.environment || 'qa' }}
+          BASE_URL: ${{ (github.event.inputs.environment == 'prod') && secrets.PROD_BASE_URL || secrets.QA_BASE_URL }}
+          STANDARD_USER: ${{ (github.event.inputs.environment == 'prod') && secrets.PROD_USER || secrets.QA_USER }}
+          PASSWORD: ${{ (github.event.inputs.environment == 'prod') && secrets.PROD_PASSWORD || secrets.QA_PASSWORD }}
+          TIMEOUT: 30000
         run: |
           mkdir -p allure-results
           python -m pytest --alluredir=allure-results
