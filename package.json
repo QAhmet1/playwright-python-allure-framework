@@ -1,0 +1,20 @@
+{
+  "name": "elite-playwright-pytest-framework",
+  "version": "1.0.0",
+  "description": "Elite Test Automation Framework",
+  "scripts": {
+    "clean": "rm -rf allure-results test-results allure-report reports videos",
+    "test:prod": "npm run clean && pytest --env prod --alluredir=allure-results",
+    "test:qa": "npm run clean && pytest --env qa --alluredir=allure-results",
+    "report": "allure serve allure-results",
+    "test:parallel": "npm run clean && pytest -n auto --env prod elite-headed",
+    "test:cross-browser": "npm run clean && pytest -n 4 --browser chromium --browser firefox --env prod --alluredir=allure-results",
+    "elite-parallel": "npm eun clean && npm run test:parallel ; npm run report",
+    "elite-run": "npm run clean && npm run test:cross-browser ; allure serve allure-results",
+    "test:headed": "pytest --env prod --alluredir=allure-results --headed --browser chromium && npm run report",
+    "test:headed:slow": "pytest --env prod --headed --browser chromium --slowmo 1000",
+    "elite-headed": "npm run clean && npm run test:headed"
+  },
+  "author": "Ahmet Demir",
+  "license": "ISC"
+}

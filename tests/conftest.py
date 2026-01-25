@@ -1,0 +1,135 @@
+import pytest
+import os
+import json
+from core.config import Config
+from datetime import datetime
+import allure
+import platform
+import time
+from allure_commons.types import AttachmentType
+from core.api_client import APIClient
+from pages.api_actions import PostService
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--env", 
+        action="store", 
+        default="qa", 
+        help="Environment to run tests: qa or prod"
+    )
+
+def pytest_configure(config):
+    env = config.getoption("--env").lower()
+    os.environ["TEST_ENV"] = env
+    
+    if not hasattr(config, '_metadata'):
+        config._metadata = {}
+    config._metadata['Project'] = 'Elite Playwright Automation'
+    config._metadata['Environment'] = env.upper()
+    config._metadata['Run Time'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+# 3. Smart Browser Context Fixture
+@pytest.fixture(scope="session")
+def browser_context_args(browser_context_args, tmp_path_factory):
+    """
+    Customizing browser context for smart reports (Video, Trace, Viewport).
+    """
+    return {
+        **browser_context_args,
+        "viewport": {"width": 1920, "height": 1080},
+        "record_video_dir": "reports/videos/",
+        "accept_downloads": True
+    }
+
+@pytest.fixture
+def page(browser):
+    context = browser.new_context(record_video_dir="videos/")
+    page = context.new_page()
+    yield page
+    context.close()
+
+def pytest_sessionfinish(session, exitstatus):
+    """
+    Customizing Allure Environment, Executor, and Categories details.
+    """
+    if hasattr(session.config, "workerinput"):
+        return
+
+    allure_dir = session.config.getoption("--alluredir")
+    env_name = session.config.getoption("--env") or "qa"
+    
+    if allure_dir and os.path.exists(allure_dir):
+        # 1. Environment.properties
+        user_name = f"{os.getlogin()}@{platform.node()}"
+        system_platform = "macOS" if platform.system() == "Darwin" else platform.system()
+        
+        env_details = (
+            f"Environment={env_name.upper()}\n"
+            f"Execution_User={user_name}\n"
+            f"Platform={system_platform}\n"
+            f"Execution_Time={datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+        )
+        with open(f"{allure_dir}/environment.properties", "w") as f:
+            f.write(env_details)
+
+        # 2. Executor.json
+        executor_info = {
+            "name": user_name,
+            "type": "local",
+            "reportName": "Elite Framework Test Report",
+            "buildName": f"Local_Build_{datetime.now().strftime('%H%M')}",
+            "reportUrl": "http://localhost:49702"
+        }
+        with open(os.path.join(allure_dir, 'executor.json'), 'w') as f:
+            json.dump(executor_info, f, indent=4)
+
+        # 3. Categories.json
+        categories_info = [
+            {
+                "name": "Infrastructure issues",
+                "matchedStatuses": ["broken", "failed"],
+                "messageRegex": ".*Timed out.*|.*Network.*"
+            },
+            {
+                "name": "Assertion errors",
+                "matchedStatuses": ["failed"],
+                "messageRegex": ".*AssertionError.*"
+            },
+            {
+                "name": "Outdated Tests",
+                "matchedStatuses": ["broken"],
+                "messageRegex": ".*AttributeError.*"
+            }
+        ]
+        with open(os.path.join(allure_dir, 'categories.json'), 'w') as f:
+            json.dump(categories_info, f, indent=4)
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    report = outcome.get_result()
+    
+    if report.when == "call" and report.failed:
+        page = item.funcargs.get("page")
+        if page:
+            allure.attach(
+                page.screenshot(full_page=True),
+                name="FAILED_SCREENSHOT",
+                attachment_type=allure.attachment_type.PNG
+            )
+
+@pytest.fixture(scope="session")
+def api_client_fixture(playwright):
+    """Creates a global API client instance."""
+    request_context = playwright.request.new_context()
+    client = APIClient(request_context)
+    yield client
+    request_context.dispose()
+
+
+
+@pytest.fixture
+def post_service(api_client_fixture):
+    """Her seferinde import etmek yerine servisi hazır sunar."""
+    return PostService(api_client_fixture)

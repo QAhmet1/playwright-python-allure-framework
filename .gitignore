@@ -1,0 +1,27 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables 
+.env*
+!.env.example
+
+# Test Reports & Artifacts
+reports/
+allure-results/
+allure-report/
+videos/
+screenshots/
+traces/
+
+# Playwright specific
+test-results/
+playwright-report/
+.last-run.json
+
+# IDEs & OS
+.vscode/
+.idea/
+.DS_Store
+*.log
