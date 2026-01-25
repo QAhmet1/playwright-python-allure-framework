@@ -36,7 +36,8 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install pytest pytest-playwright allure-pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
@@ -44,14 +45,11 @@ jobs:
       - name: Run Tests
         continue-on-error: true
         env:
-          TEST_ENV: ${{ github.event.inputs.environment || 'qa' }}
-          BASE_URL: ${{ (github.event.inputs.environment == 'prod') && secrets.PROD_BASE_URL || secrets.QA_BASE_URL }}
-          STANDARD_USER: ${{ (github.event.inputs.environment == 'prod') && secrets.PROD_USER || secrets.QA_USER }}
-          PASSWORD: ${{ (github.event.inputs.environment == 'prod') && secrets.PROD_PASSWORD || secrets.QA_PASSWORD }}
-          TIMEOUT: 30000
+          # Mevcut env ayarların kalsın...
         run: |
+          mkdir -p allure-results
           python -m pytest --alluredir=allure-results
-          ls -R allure-results
+          ls -l allure-results
 
       - name: Build Allure Report
         uses: simple-elf/allure-report-action@master
