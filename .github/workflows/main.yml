@@ -1,0 +1,74 @@
+name: Elite Playwright Tests CI
+
+on:
+  schedule:
+    # 06:00 UTC is 07:00 Belgium time (Winter)
+    - cron: '0 6 * * *'
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to run tests'
+        required: true
+        default: 'qa'
+        type: choice
+        options:
+          - qa
+          - prod
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Playwright Browsers
+        run: playwright install --with-deps
+
+      - name: Run Tests
+        continue-on-error: true
+        env:
+          # Use selected environment from input, or default to 'qa' for scheduled/push runs
+          TEST_ENV: ${{ github.event.inputs.environment || 'qa' }}
+          
+          # Dynamic mapping for Secrets based on environment
+          BASE_URL: ${{ (github.event.inputs.environment == 'prod') && secrets.PROD_BASE_URL || secrets.QA_BASE_URL }}
+          STANDARD_USER: ${{ (github.event.inputs.environment == 'prod') && secrets.PROD_USER || secrets.QA_USER }}
+          PASSWORD: ${{ (github.event.inputs.environment == 'prod') && secrets.PROD_PASSWORD || secrets.QA_PASSWORD }}
+          TIMEOUT: 30000
+        run: |
+          pytest --alluredir=allure-results
+
+      - name: Load Allure History
+        uses: actions/checkout@v4
+        if: always()
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Build Allure Report
+        uses: simple-elf/allure-report-action@master
+        if: always()
+        with:
+          allure_results: allure-results
+          allure_history: allure-history
+          keep_reports: 20
+
+      - name: Deploy Report to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: allure-history
