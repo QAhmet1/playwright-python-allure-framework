@@ -9,6 +9,7 @@ import time
 from allure_commons.types import AttachmentType
 from core.api_client import APIClient
 from pages.api_actions import PostService
+import getpass
 
 
 def pytest_addoption(parser):
@@ -61,7 +62,11 @@ def pytest_sessionfinish(session, exitstatus):
     
     if allure_dir and os.path.exists(allure_dir):
         # 1. Environment.properties
-        user_name = f"{os.getlogin()}@{platform.node()}"
+        try: 
+            user = getpass.getuser() 
+        except Exception: 
+            user = "ci-runner" 
+        user_name = f"{user}@{platform.node()}"
         system_platform = "macOS" if platform.system() == "Darwin" else platform.system()
         
         env_details = (
