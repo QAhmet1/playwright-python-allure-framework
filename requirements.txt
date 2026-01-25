@@ -4,3 +4,4 @@ allure-pytest
 python-dotenv
 pytest-xdist
 pytest-rerunfailures
+faker
