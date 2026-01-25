@@ -63,18 +63,11 @@ jobs:
           mkdir -p allure-results
           python -m pytest tests/ --alluredir=allure-results -n 2
 
-      - name: Setup Allure Executor Information
+      - name: Setup Allure Environment Info
         if: always()
         run: |
-          echo '{
-            "name": "GitHub Actions",
-            "type": "github",
-            "reportName": "Elite Playwright Test Report",
-            "url": "${{ github.server_url }}/${{ github.repository }}",
-            "buildOrder": ${{ github.run_number }},
-            "buildName": "Run #${{ github.run_number }}",
-            "buildUrl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          }' > allure-results/executor.json
+          echo "Environment=${{ github.event.inputs.environment || 'qa' }}" > allure-results/environment.properties
+          echo "Execution_User=GitHub_Actions" >> allure-results/environment.properties
 
       - name: Build Allure Report
         uses: simple-elf/allure-report-action@master
