@@ -44,23 +44,14 @@ jobs:
       - name: Run Tests
         continue-on-error: true
         env:
-          # Use selected environment from input, or default to 'qa' for scheduled/push runs
           TEST_ENV: ${{ github.event.inputs.environment || 'qa' }}
-          
-          # Dynamic mapping for Secrets based on environment
           BASE_URL: ${{ (github.event.inputs.environment == 'prod') && secrets.PROD_BASE_URL || secrets.QA_BASE_URL }}
           STANDARD_USER: ${{ (github.event.inputs.environment == 'prod') && secrets.PROD_USER || secrets.QA_USER }}
           PASSWORD: ${{ (github.event.inputs.environment == 'prod') && secrets.PROD_PASSWORD || secrets.QA_PASSWORD }}
           TIMEOUT: 30000
         run: |
-          pytest --alluredir=allure-results
-
-      - name: Load Allure History
-        uses: actions/checkout@v4
-        if: always()
-        with:
-          ref: gh-pages
-          path: gh-pages
+          python -m pytest --alluredir=allure-results
+          ls -R allure-results
 
       - name: Build Allure Report
         uses: simple-elf/allure-report-action@master
