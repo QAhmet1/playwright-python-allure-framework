@@ -1,0 +1,9 @@
+# Ignore local environment and cache files
+__pycache__/
+.pytest_cache/
+allure-results/
+allure-history/
+venv/
+.env
+.git/
+.github/

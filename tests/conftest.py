@@ -61,30 +61,55 @@ def pytest_sessionfinish(session, exitstatus):
     env_name = session.config.getoption("--env") or "qa"
     
     if allure_dir and os.path.exists(allure_dir):
+        # --- Ortam Tespit Mantığı ---
+        is_github = os.getenv('GITHUB_ACTIONS') == 'true'
+        is_docker = os.path.exists('/.dockerenv')
+        
+        if is_github:
+            exec_context = "GitHub Actions"
+            executor_type = "github"
+            report_url = f"https://github.com/{os.getenv('GITHUB_REPOSITORY')}/actions/runs/{os.getenv('GITHUB_RUN_ID')}"
+            build_name = f"CI_Build_{os.getenv('GITHUB_RUN_NUMBER')}"
+        elif is_docker:
+            exec_context = "Docker Container"
+            executor_type = "docker"
+            report_url = "N/A" # Konteynır içinden URL genelde statik olmaz
+            build_name = f"Docker_Build_{datetime.now().strftime('%H%M')}"
+        else:
+            exec_context = "Local Machine"
+            executor_type = "local"
+            report_url = "http://localhost:49702"
+            build_name = f"Local_Build_{datetime.now().strftime('%H%M')}"
+
         # 1. Environment.properties
         try: 
             user = getpass.getuser() 
         except Exception: 
             user = "ci-runner" 
+            
         user_name = f"{user}@{platform.node()}"
         system_platform = "macOS" if platform.system() == "Darwin" else platform.system()
         
         env_details = (
             f"Environment={env_name.upper()}\n"
+            f"Execution_Context={exec_context}\n"  # Local/Docker/GitHub
             f"Execution_User={user_name}\n"
             f"Platform={system_platform}\n"
             f"Execution_Time={datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"Browser=Chromium\n"
+            f"Playwright_Version=1.57.0\n"
+            f"Framework=Elite-Playwright-Pytest\n"
         )
-        with open(f"{allure_dir}/environment.properties", "w") as f:
+        with open(os.path.join(allure_dir, "environment.properties"), "w") as f:
             f.write(env_details)
 
         # 2. Executor.json
         executor_info = {
             "name": user_name,
-            "type": "local",
-            "reportName": "Elite Framework Test Report",
-            "buildName": f"Local_Build_{datetime.now().strftime('%H%M')}",
-            "reportUrl": "http://localhost:49702"
+            "type": executor_type,
+            "reportName": f"Elite Framework - {exec_context}",
+            "buildName": build_name,
+            "reportUrl": report_url
         }
         with open(os.path.join(allure_dir, 'executor.json'), 'w') as f:
             json.dump(executor_info, f, indent=4)
