@@ -13,7 +13,11 @@
     "elite-run": "npm run clean && npm run test:cross-browser ; allure serve allure-results",
     "test:headed": "pytest --env prod --alluredir=allure-results --headed --browser chromium && npm run report",
     "test:headed:slow": "pytest --env prod --headed --browser chromium --slowmo 1000",
-    "elite-headed": "npm run clean && npm run test:headed"
+    "elite-headed": "npm run clean && npm run test:headed",
+    "docker:build": "docker build -t playwright-docker-app .",
+    "docker:run": "docker run --rm -v \"$(pwd)/allure-results:/app/allure-results\" playwright-docker-app",
+    "docker:full-run": "npm run docker:build && npm run docker:run && allure serve allure-results",
+    "allure:serve": "allure serve allure-results"
   },
   "author": "Ahmet Demir",
   "license": "ISC"
