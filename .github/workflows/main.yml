@@ -1,4 +1,94 @@
-name: Elite Playwright Tests CI
+# name: Elite Playwright Tests CI
+
+# permissions:
+#   contents: write
+#   pages: write
+#   id-token: write
+
+# on:
+#   schedule:
+#     # 06:00 UTC is 07:00 Belgium time (Winter)
+#     - cron: '0 6 * * *'
+#   push:
+#     branches: [ main ]
+#   workflow_dispatch:
+#     inputs:
+#       environment:
+#         description: 'Environment to run tests'
+#         required: true
+#         default: 'qa'
+#         type: choice
+#         options:
+#           - qa
+#           - prod
+
+# jobs:
+#   test:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v4
+
+#       - name: Set up Python
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: '3.11'
+
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '20'
+
+#       - name: Install Node Dependencies
+#         run: npm install
+
+#       - name: Install Python Dependencies
+#         run: |
+#           python -m pip install --upgrade pip
+#           pip install pytest pytest-playwright allure-pytest python-dotenv pytest-xdist pytest-rerunfailures faker
+#           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+#       - name: Install Playwright Browsers
+#         run: python -m playwright install chromium --with-deps
+
+#       - name: Run Tests
+#         continue-on-error: true
+#         env:
+#           TEST_ENV: ${{ github.event.inputs.environment || 'qa' }}
+#           BASE_URL: ${{ (github.event.inputs.environment == 'prod') && secrets.PROD_BASE_URL || secrets.QA_BASE_URL }}
+#           STANDARD_USER: ${{ (github.event.inputs.environment == 'prod') && secrets.PROD_USER || secrets.QA_USER }}
+#           PASSWORD: ${{ (github.event.inputs.environment == 'prod') && secrets.PROD_PASSWORD || secrets.QA_PASSWORD }}
+#           TIMEOUT: 30000
+#         run: |
+#           mkdir -p allure-results
+#           python -m pytest tests/ --alluredir=allure-results -n 2
+
+#       - name: Setup Allure Environment Info
+#         if: always()
+#         run: |
+#           echo "Environment=${{ github.event.inputs.environment || 'qa' }}" > allure-results/environment.properties
+#           echo "Execution_User=GitHub_Actions" >> allure-results/environment.properties
+
+#       - name: Build Allure Report
+#         uses: simple-elf/allure-report-action@master
+#         if: always()
+#         with:
+#           allure_results: allure-results
+#           allure_history: allure-history
+#           keep_reports: 20
+
+#       - name: Deploy Report to GitHub Pages
+#         if: always()
+#         uses: peaceiris/actions-gh-pages@v3
+#         with:
+#           github_token: ${{ secrets.GITHUB_TOKEN }}
+#           publish_dir: allure-history
+#           # Bu parametre sayesinde .nojekyll dosyasına manuel ihtiyaç kalmaz.
+#           enable_jekyll: false 
+#           force_orphan: true
+
+
+name: Elite Playwright Tests CI (Dockerized)
 
 permissions:
   contents: write
@@ -7,7 +97,6 @@ permissions:
 
 on:
   schedule:
-    # 06:00 UTC is 07:00 Belgium time (Winter)
     - cron: '0 6 * * *'
   push:
     branches: [ main ]
@@ -29,46 +118,23 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
+      # 1. Adım: Docker imajını build ediyoruz (Lokaldeki mantıkla aynı)
+      - name: Build Docker Image
+        run: docker build -t elite-playwright-app .
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install Node Dependencies
-        run: npm install
-
-      - name: Install Python Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pytest pytest-playwright allure-pytest python-dotenv pytest-xdist pytest-rerunfailures faker
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
-      - name: Install Playwright Browsers
-        run: python -m playwright install chromium --with-deps
-
-      - name: Run Tests
+      # 2. Adım: Testleri Docker konteynerı içinde koşturuyoruz
+      # NOT: Volume mapping ile konteyner içindeki sonuçları dışarı aktarıyoruz
+      - name: Run Tests in Docker
         continue-on-error: true
-        env:
-          TEST_ENV: ${{ github.event.inputs.environment || 'qa' }}
-          BASE_URL: ${{ (github.event.inputs.environment == 'prod') && secrets.PROD_BASE_URL || secrets.QA_BASE_URL }}
-          STANDARD_USER: ${{ (github.event.inputs.environment == 'prod') && secrets.PROD_USER || secrets.QA_USER }}
-          PASSWORD: ${{ (github.event.inputs.environment == 'prod') && secrets.PROD_PASSWORD || secrets.QA_PASSWORD }}
-          TIMEOUT: 30000
         run: |
           mkdir -p allure-results
-          python -m pytest tests/ --alluredir=allure-results -n 2
+          docker run --name elite-container \
+            -v ${{ github.workspace }}/allure-results:/app/allure-results \
+            -e TEST_ENV=${{ github.event.inputs.environment || 'qa' }} \
+            elite-playwright-app \
+            python -m pytest tests/ --alluredir=allure-results -n 2
 
-      - name: Setup Allure Environment Info
-        if: always()
-        run: |
-          echo "Environment=${{ github.event.inputs.environment || 'qa' }}" > allure-results/environment.properties
-          echo "Execution_User=GitHub_Actions" >> allure-results/environment.properties
-
+      # 3. Adım: Allure Raporunu Hazırla (Mevcut adımların devamı)
       - name: Build Allure Report
         uses: simple-elf/allure-report-action@master
         if: always()
@@ -83,6 +149,5 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: allure-history
-          # Bu parametre sayesinde .nojekyll dosyasına manuel ihtiyaç kalmaz.
           enable_jekyll: false 
           force_orphan: true
