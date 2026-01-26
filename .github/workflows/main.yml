@@ -29,12 +29,11 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. Adım: Docker imajını build ediyoruz (Lokaldeki mantıkla aynı)
+      # 1.Build Docker Image
       - name: Build Docker Image
         run: docker build -t elite-playwright-app .
 
-      # 2. Adım: Testleri Docker konteynerı içinde koşturuyoruz
-      # NOT: Volume mapping ile konteyner içindeki sonuçları dışarı aktarıyoruz
+      # 2. Ruun test In Docker container
       - name: Run Tests in Docker
         continue-on-error: true
         run: |
@@ -48,7 +47,7 @@ jobs:
             elite-playwright-app \
             python -m pytest tests/ --alluredir=allure-results -n 2
 
-      # 3. Adım: Allure Raporunu Hazırla (Mevcut adımların devamı)
+      # 3. Prepare allure report
       - name: Build Allure Report
         uses: simple-elf/allure-report-action@master
         if: always()
