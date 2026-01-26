@@ -91,13 +91,14 @@ def pytest_sessionfinish(session, exitstatus):
         system_platform = "macOS" if platform.system() == "Darwin" else platform.system()
         
         env_details = (
-            f"Environment={env_name.upper()}\n"
-            f"Execution_Context={exec_context}\n"  # Local/Docker/GitHub
+           f"Environment={env_name.upper()}\n"
+            f"Execution_Context={exec_context}\n"
             f"Execution_User={user_name}\n"
             f"Platform={system_platform}\n"
             f"Execution_Time={datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
             f"Browser=Chromium\n"
             f"Playwright_Version=1.57.0\n"
+            f"Docker_Image=python:v1.57.0-jammy\n"
             f"Framework=Elite-Playwright-Pytest\n"
         )
         with open(os.path.join(allure_dir, "environment.properties"), "w") as f:
