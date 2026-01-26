@@ -131,6 +131,12 @@ jobs:
           docker run --name elite-container \
             -v ${{ github.workspace }}/allure-results:/app/allure-results \
             -e TEST_ENV=${{ github.event.inputs.environment || 'qa' }} \
+            -e QA_BASE_URL=${{ secrets.QA_BASE_URL }} \
+            -e PROD_BASE_URL=${{ secrets.PROD_BASE_URL }} \
+            -e QA_USER=${{ secrets.QA_USER }} \
+            -e QA_PASSWORD=${{ secrets.QA_PASSWORD }} \
+            -e PROD_USER=${{ secrets.PROD_USER }} \
+            -e PROD_PASSWORD=${{ secrets.PROD_PASSWORD }} \
             elite-playwright-app \
             python -m pytest tests/ --alluredir=allure-results -n 2
 
