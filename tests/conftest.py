@@ -10,6 +10,7 @@ from allure_commons.types import AttachmentType
 from core.api_client import APIClient
 from pages.api_actions import PostService
 import getpass
+from core.db_client import DBClient
 
 
 def pytest_addoption(parser):
@@ -164,3 +165,41 @@ def api_client_fixture(playwright):
 def post_service(api_client_fixture):
     """Her seferinde import etmek yerine servisi hazır sunar."""
     return PostService(api_client_fixture)
+
+
+@pytest.fixture(scope="session")
+def db_client():
+    """Initializes the DBClient instance."""
+    return DBClient(db_path="automation_test.db")
+
+@pytest.fixture(scope="function", autouse=False)
+def setup_database_schema(db_client):
+    """
+    Setup: Create the relational schema (tables) before tests.
+    This ensures tables exist and are empty for each test that uses this fixture.
+    """
+    # Create Departments table
+    db_client.execute_non_query("DROP TABLE IF EXISTS departments")
+    db_client.execute_non_query("""
+        CREATE TABLE departments (
+            id INTEGER PRIMARY KEY,
+            dept_name TEXT
+        )
+    """)
+    
+    # Create Employees table with relational structure
+    db_client.execute_non_query("DROP TABLE IF EXISTS employees")
+    db_client.execute_non_query("""
+        CREATE TABLE employees (
+            id INTEGER PRIMARY KEY,
+            name TEXT,
+            dept_id INTEGER,
+            FOREIGN KEY (dept_id) REFERENCES departments (id)
+        )
+    """)
+    
+    # Seed common base data
+    db_client.execute_non_query("INSERT INTO departments VALUES (1, 'QA'), (2, 'Dev')")
+    
+    yield db_client
+    # Optional: Teardown logic here (e.g., clearing tables)
