@@ -62,7 +62,6 @@ def pytest_sessionfinish(session, exitstatus):
     env_name = session.config.getoption("--env") or "qa"
     
     if allure_dir and os.path.exists(allure_dir):
-        # --- Ortam Tespit Mantığı ---
         is_github = os.getenv('GITHUB_ACTIONS') == 'true'
         is_docker = os.path.exists('/.dockerenv')
         
@@ -202,4 +201,3 @@ def setup_database_schema(db_client):
     db_client.execute_non_query("INSERT INTO departments VALUES (1, 'QA'), (2, 'Dev')")
     
     yield db_client
-    # Optional: Teardown logic here (e.g., clearing tables)

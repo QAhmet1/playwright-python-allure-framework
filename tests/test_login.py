@@ -18,7 +18,6 @@ def test_elite_login_check(page):
     
     # 3. Assert 
     with allure.step("Verify redirection to inventory page"):
-        # Fixed: Removed the trailing underscore from 'inventory.html'
         assert "inventory.html" in page.url
         
     allure.dynamic.description(f"Successful login verified for URL: {page.url}")
