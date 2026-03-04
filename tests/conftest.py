@@ -167,16 +167,24 @@ def post_service(api_client_fixture):
 
 
 @pytest.fixture(scope="session")
-def db_client():
-    """Initializes the DBClient instance."""
-    return DBClient(db_path="automation_test.db")
+def db_path(worker_id):
+
+    if worker_id == "master":
+        return "automation_test.db"
+    # Paralel çalışmada: automation_test_gw0.db, automation_test_gw1.db gibi oluşur
+    return f"automation_test_{worker_id}.db"
+
+@pytest.fixture(scope="session")
+def db_client(db_path):
+    """Initializes the DBClient instance with isolated path."""
+    return DBClient(db_path=db_path)
 
 @pytest.fixture(scope="function", autouse=False)
 def setup_database_schema(db_client):
-    """
-    Setup: Create the relational schema (tables) before tests.
-    This ensures tables exist and are empty for each test that uses this fixture.
-    """
+    # Isolation before each test: Drop and recreate tables to ensure a clean state
+    db_client.execute_non_query("DROP TABLE IF EXISTS employees")
+    db_client.execute_non_query("DROP TABLE IF EXISTS departments")
+
     # Create Departments table
     db_client.execute_non_query("DROP TABLE IF EXISTS departments")
     db_client.execute_non_query("""
