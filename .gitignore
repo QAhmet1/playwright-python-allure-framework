@@ -24,4 +24,5 @@ playwright-report/
 .vscode/
 .idea/
 .DS_Store
-*.log
+*.log*.db
+*.db

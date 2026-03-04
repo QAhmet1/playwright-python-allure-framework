@@ -141,3 +141,4 @@ class TestDatabase:
             # Result: [('Zeynep',), ('Ahmet',)]
             assert result[0][0] == 'Zeynep'
             assert result[1][0] == 'Ahmet'
+            
