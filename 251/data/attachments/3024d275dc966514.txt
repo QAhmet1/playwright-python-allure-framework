@@ -1,0 +1,4 @@
+🚀 METHOD: GET
+🔗 URL: https://jsonplaceholder.typicode.com/posts/9999
+✅ STATUS: 404
+📥 RESPONSE: {}
