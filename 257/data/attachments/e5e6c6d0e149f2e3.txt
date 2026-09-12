@@ -1,0 +1,12 @@
+🚀 METHOD: PATCH
+🔗 URL: https://jsonplaceholder.typicode.com/posts/1
+✅ STATUS: 200
+📤 PAYLOAD: {
+  "title": "Elite Test Update"
+}
+📥 RESPONSE: {
+  "userId": 1,
+  "id": 1,
+  "title": "Elite Test Update",
+  "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+}
