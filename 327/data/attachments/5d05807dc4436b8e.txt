@@ -1,0 +1,4 @@
+🚀 METHOD: DELETE
+🔗 URL: https://jsonplaceholder.typicode.com/posts/1
+✅ STATUS: 200
+📥 RESPONSE: {}
